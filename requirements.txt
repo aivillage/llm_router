@@ -1,0 +1,8 @@
+aiohttp==3.8.5
+aioredis==2.0.1
+fastapi==0.100.1
+gunicorn==21.2.0
+pip==22.0.4
+PyYAML==6.0.1
+setuptools==58.1.0
+uvicorn==0.23.2

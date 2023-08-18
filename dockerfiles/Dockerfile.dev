@@ -1,0 +1,17 @@
+FROM python:3.10-slim-bookworm as release
+WORKDIR /opt/llm_router
+
+COPY --chown=1001:1001 . /opt/llm_router/
+RUN pip install --no-cache-dir -r requirements.txt
+
+RUN useradd \
+    --no-log-init \
+    --shell /bin/bash \
+    -u 1001 \
+    llm_router \
+    && mkdir -p /var/log/llm_router \
+    && chown -R 1001:1001 /var/log/llm_router /opt/llm_router/llm_router
+
+USER 1001
+EXPOSE 8000
+ENTRYPOINT ["uvicorn","llm_router.app:app", "--reload", "--host", "0.0.0.0", "--log-config", "logging.yml"]

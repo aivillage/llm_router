@@ -1,0 +1,74 @@
+version: 1
+disable_existing_loggers: False
+formatters:
+  default:
+    "()": uvicorn.logging.DefaultFormatter
+    format: '[%(asctime)s] %(levelname)s %(message)s'
+  access:
+    "()": uvicorn.logging.AccessFormatter
+    format: "[%(asctime)s %(process)d] %(name)s - %(levelname)s - %(message)s | %(filename)s:%(lineno)d"
+  app_format:
+    format: "[%(asctime)s %(process)d] %(name)s - %(levelname)s - %(message)s | %(filename)s:%(lineno)d"
+handlers:
+  file_handler:
+    class: logging.FileHandler
+    level: INFO
+    formatter: app_format
+    filename: /var/log/ctfd_remote_llm/info.log
+    encoding: utf8
+    mode: a
+    
+  gen_file_handler:
+    class: logging.FileHandler
+    level: INFO
+    formatter: app_format
+    filename: /var/log/ctfd_remote_llm/generations.log
+    encoding: utf8
+    mode: a
+  auth_file_handler:
+    class: logging.FileHandler
+    level: INFO
+    formatter: app_format
+    filename: /var/log/ctfd_remote_llm/auth.log
+    encoding: utf8
+    mode: a
+  app_default:
+    formatter: app_format
+    class: logging.StreamHandler
+    stream: ext://sys.stderr
+
+  default:
+    formatter: default
+    class: logging.StreamHandler
+    stream: ext://sys.stderr
+  access:
+    formatter: access
+    class: logging.StreamHandler
+    stream: ext://sys.stdout
+loggers:
+  generator:
+    level: INFO
+    handlers:
+      - app_default
+      - gen_file_handler
+    propagate: no
+
+  auth:
+    level: INFO
+    handlers:
+      - app_default
+      - auth_file_handler
+    propagate: no
+
+  uvicorn.error:
+    level: INFO
+    handlers:
+      - default
+      - file_handler
+    propagate: no
+  uvicorn.access:
+    level: INFO
+    handlers:
+      - access
+      - file_handler
+    propagate: no
