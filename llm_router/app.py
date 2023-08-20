@@ -1,15 +1,14 @@
 from typing import Optional, List
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from starlette.status import HTTP_404_NOT_FOUND, HTTP_422_UNPROCESSABLE_ENTITY
+from starlette.status import HTTP_404_NOT_FOUND, HTTP_422_UNPROCESSABLE_ENTITY, HTTP_500_INTERNAL_SERVER_ERROR
 from logging import getLogger
-from .constants import RedisLocal
+from .constants import load_redis
 log = getLogger("generator")
 
 from .models.models import models
 
 app = FastAPI()
-
 
 class GenerateRequest(BaseModel):
     # This needs to be unique to the request, it is used to make requests idempotent
@@ -21,30 +20,45 @@ class GenerateRequest(BaseModel):
 
 class GenerateResponse(BaseModel):
     uuid: str
-    generation: str = ""
+    generation: str
 
+RedisLocal = load_redis()
+
+async def generate_cacheless(request: GenerateRequest) -> str:
+    if request.model not in models:
+        raise HTTPException(HTTP_404_NOT_FOUND, "Model not found")
+    
+    try:
+        generation = await models[request.model](request.prompt, request.preprompt)
+        return generation
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(HTTP_500_INTERNAL_SERVER_ERROR, str(e))
 
 @app.post("/generate")
 async def generate(request: GenerateRequest) -> GenerateResponse:
     # Check redis cache:
-    cached = await RedisLocal.get(request.uuid)
-    if cached is not None:
-        if cached == "ERROR":
-            return HTTP_422_UNPROCESSABLE_ENTITY(generation="", error="Error in previous generation")
-        return GenerateResponse(uuid=request.uuid, generation=cached)
-    
-    if request.model not in models:
-        return HTTP_404_NOT_FOUND("Model not found")
-    
-    try:
-        generation = await models[request.model](request.prompt, request.preprompt)
-        # Cache the result
-        await RedisLocal.set(request.uuid, generation)
+    if RedisLocal is not None:
+        cached = await RedisLocal.get(request.uuid)
+        if cached is not None:
+            if cached == "<ERROR>":
+                raise HTTPException(HTTP_422_UNPROCESSABLE_ENTITY,"Upstream error")
+            return GenerateResponse(uuid=request.uuid, generation=cached)
+        if cached is None:
+            try:
+                generation = await generate_cacheless(request)
+                await RedisLocal.set(request.uuid, generation)
+                return GenerateResponse(uuid=request.uuid, generation=generation)
+            except HTTPException as e:
+                if e.status_code == HTTP_422_UNPROCESSABLE_ENTITY:
+                    await RedisLocal.set(request.uuid, "<ERROR>")
+                log.exception(e)
+                await RedisLocal.set(request.uuid, "<ERROR>")
+                raise e
+    else:
+        generation = await generate_cacheless(request)
         return GenerateResponse(uuid=request.uuid, generation=generation)
-    except Exception as e:
-        log.exception(e)
-        await RedisLocal.set(request.uuid, "ERROR")
-        return HTTP_422_UNPROCESSABLE_ENTITY(generation="", error=str(e))
     
 
 class ModelsResponse(BaseModel):

@@ -4,10 +4,9 @@ from fastapi import HTTPException
 from starlette.status import HTTP_429_TOO_MANY_REQUESTS
 import aiohttp
 from logging import getLogger
-from ..constants import HF_KEY
+from ..secrets import hf_key
 log = getLogger("generator")
 
-HEADERS = {'Authorization': f'Bearer {HF_KEY}'}
 
 def load_huggingface_models(file):
     with open(file) as f:
@@ -19,6 +18,7 @@ def load_huggingface_models(file):
 
 def huggingface_single_model_factory(url: str, parameters: dict, prompt_format: str):
     async def generate(prompt: str, preprompt: Optional[str] = None) -> str:
+        HEADERS = {'Authorization': f'Bearer {hf_key()}'}
         full_prompt = prompt_format.format(preprompt=preprompt, prompt=prompt)
         payload = {'inputs': full_prompt, "parameters" : parameters, "stream": False}
         

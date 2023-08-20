@@ -14,7 +14,7 @@ handlers:
     class: logging.FileHandler
     level: INFO
     formatter: app_format
-    filename: /var/log/ctfd_remote_llm/info.log
+    filename: /var/log/llm_router/info.log
     encoding: utf8
     mode: a
     
@@ -22,14 +22,14 @@ handlers:
     class: logging.FileHandler
     level: INFO
     formatter: app_format
-    filename: /var/log/ctfd_remote_llm/generations.log
+    filename: /var/log/llm_router/generations.log
     encoding: utf8
     mode: a
   auth_file_handler:
     class: logging.FileHandler
     level: INFO
     formatter: app_format
-    filename: /var/log/ctfd_remote_llm/auth.log
+    filename: /var/log/llm_router/auth.log
     encoding: utf8
     mode: a
   app_default:
@@ -69,6 +69,5 @@ loggers:
   uvicorn.access:
     level: INFO
     handlers:
-      - access
       - file_handler
     propagate: no

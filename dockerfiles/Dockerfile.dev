@@ -3,6 +3,7 @@ WORKDIR /opt/llm_router
 
 COPY --chown=1001:1001 . /opt/llm_router/
 RUN pip install --no-cache-dir -r requirements.txt
+RUN apt update && apt install -y curl
 
 RUN useradd \
     --no-log-init \

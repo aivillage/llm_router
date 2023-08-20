@@ -1,3 +1,5 @@
 # A remote LLM for the LLM Verification Plugin for CTFd
 
-to launch a dev instance `docker compose -f docker-compose.dev.yml up --build`
+To launch a dev instance `docker compose -f dockerfiles/docker-compose.dev.yml up --build`
+
+To run tests `docker compose -f tests/docker-compose.yml up --build`
