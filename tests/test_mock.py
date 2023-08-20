@@ -24,10 +24,14 @@ def test_generate_error():
     payload = {"uuid": uuid, "prompt": "error", "preprompt": "test", "model": "mock_model"}
     response = requests.post(url + "/generate", json=payload)
     assert response.status_code == 500
+    response = requests.post(url + "/generate", json=payload)
+    assert response.status_code == 500
 
 def test_generate_long():
     uuid = str(uuid4())
     payload = {"uuid": uuid, "prompt": "long_prompt", "preprompt": "test", "model": "mock_model"}
+    response = requests.post(url + "/generate", json=payload)
+    assert response.status_code == 422
     response = requests.post(url + "/generate", json=payload)
     assert response.status_code == 422
 
@@ -41,6 +45,8 @@ def test_generate_long_response():
 def test_generate_model_not_found():
     uuid = str(uuid4())
     payload = {"uuid": uuid, "prompt": "test", "preprompt": "test", "model": "not_found"}
+    response = requests.post(url + "/generate", json=payload)
+    assert response.status_code == 404
     response = requests.post(url + "/generate", json=payload)
     assert response.status_code == 404
 
