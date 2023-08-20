@@ -1,3 +1,4 @@
+import json
 from typing import Optional, List
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
@@ -42,8 +43,10 @@ async def generate(request: GenerateRequest) -> GenerateResponse:
     if RedisLocal is not None:
         cached = await RedisLocal.get(request.uuid)
         if cached is not None:
-            if cached == "<ERROR>":
-                raise HTTPException(HTTP_422_UNPROCESSABLE_ENTITY,"Upstream error")
+            if cached.startswith("<ERROR>"):
+                error_json = json.loads(cached[7:])
+                raise HTTPException(error_json["code"], error_json["message"])
+                
             return GenerateResponse(uuid=request.uuid, generation=cached)
         if cached is None:
             try:
@@ -51,10 +54,8 @@ async def generate(request: GenerateRequest) -> GenerateResponse:
                 await RedisLocal.set(request.uuid, generation)
                 return GenerateResponse(uuid=request.uuid, generation=generation)
             except HTTPException as e:
-                if e.status_code == HTTP_422_UNPROCESSABLE_ENTITY:
-                    await RedisLocal.set(request.uuid, "<ERROR>")
-                log.exception(e)
-                await RedisLocal.set(request.uuid, "<ERROR>")
+                error_json = {"code": e.status_code, "message": e.detail}
+                await RedisLocal.set(request.uuid, f"<ERROR>{json.dumps(error_json)}")
                 raise e
     else:
         generation = await generate_cacheless(request)
