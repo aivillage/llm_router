@@ -1,13 +1,13 @@
-use axum::{extract::Json,response::IntoResponse};
-use thiserror::Error;
+use axum::{extract::Json, response::IntoResponse};
 use serde::{Deserialize, Serialize};
+use thiserror::Error;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ErrorResponse {
     error: String,
 }
 
-#[derive(Error, Debug)]
+#[derive(Error, Debug, Deserialize, Serialize)]
 pub enum ModelError {
     #[error("Model not found")]
     ModelNotFound,
@@ -20,7 +20,7 @@ pub enum ModelError {
     #[error("Preprompt was too long")]
     PrepromptTooLong,
     #[error("Other error: {0}")]
-    Other(Box<dyn std::error::Error + Send + Sync>),
+    Other(String),
 }
 
 impl IntoResponse for ModelError {
@@ -34,10 +34,13 @@ impl IntoResponse for ModelError {
                 reqwest::StatusCode::TOO_MANY_REQUESTS,
                 "Rate limit exceeded",
             ),
-            ModelError::PromptTooLong => (reqwest::StatusCode::UNPROCESSABLE_ENTITY, "Prompt too long"),
-            ModelError::PrepromptTooLong => {
-                (reqwest::StatusCode::UNPROCESSABLE_ENTITY, "Preprompt too long")
+            ModelError::PromptTooLong => {
+                (reqwest::StatusCode::UNPROCESSABLE_ENTITY, "Prompt too long")
             }
+            ModelError::PrepromptTooLong => (
+                reqwest::StatusCode::UNPROCESSABLE_ENTITY,
+                "Preprompt too long",
+            ),
             ModelError::Other(_) => (reqwest::StatusCode::INTERNAL_SERVER_ERROR, "Other error"),
             ModelError::ModelNotFound => (reqwest::StatusCode::NOT_FOUND, "Model not found"),
         };
@@ -51,6 +54,19 @@ impl IntoResponse for ModelError {
     }
 }
 
-pub trait CacheAble {
-    fn cache_key(&self) -> &str;
+impl ModelError {
+    pub fn to_redis_string(&self) -> String {
+        format!("ERR:{}", serde_json::to_string(self).unwrap())
+    }
+
+    pub fn from_redis_string(s: &str) -> Option<Self> {
+        let mut split = s.splitn(2, ':');
+        let status = split.next()?;
+        let error = split.next()?;
+        if status == "ERR" {
+            serde_json::from_str(error).ok()
+        } else {
+            None
+        }
+    }
 }

@@ -1,5 +1,5 @@
-use crate::errors::ModelError;
 use super::SingleTurnLlm;
+use crate::errors::ModelError;
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use serde_json;
@@ -43,19 +43,16 @@ impl SingleTurnLlm for MockModel {
             }
             "error" => {
                 tracing::info!("Mocking other error");
-                Err(ModelError::Other(Box::new(std::io::Error::new(
-                    std::io::ErrorKind::Other,
-                    "other error",
-                ))))
+                Err(ModelError::Other("Other error".to_string()))
             }
             "long_response" => {
                 tracing::info!("Mocking long response");
                 Ok(self.long.clone())
-            },
+            }
             _ => {
                 tracing::info!("Mocking short response");
                 Ok(self.short.clone())
-            },
+            }
         }
     }
 }

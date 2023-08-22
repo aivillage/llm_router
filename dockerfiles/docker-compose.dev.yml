@@ -5,6 +5,8 @@ services:
     build: 
       context: ../
       dockerfile: dockerfiles/Dockerfile.dev
+    env_file:
+      - ../.env.template
     user: root
     restart: always
     ports:

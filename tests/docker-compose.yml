@@ -17,6 +17,8 @@ services:
       dockerfile: dockerfiles/Dockerfile.dev
     user: root
     restart: always
+    env_file:
+      - ../.env.template
     ports:
       - "8000:8000"
     volumes:
