@@ -1,5 +1,6 @@
 use super::SingleTurnLlm;
 use crate::errors::ModelError;
+use crate::secret_manager::Secrets;
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use serde_json;
@@ -21,6 +22,7 @@ impl SingleTurnLlm for MockModel {
     }
     async fn generate(
         &self,
+        _secrets: Secrets,
         prompt: String,
         _preprompt: Option<String>,
     ) -> Result<String, ModelError> {

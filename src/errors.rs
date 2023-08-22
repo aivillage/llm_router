@@ -60,9 +60,9 @@ impl ModelError {
     }
 
     pub fn from_redis_string(s: &str) -> Option<Self> {
-        let mut split = s.splitn(2, ':');
-        let status = split.next()?;
-        let error = split.next()?;
+        let (status, error) = s.split_once(':')?;
+        
+        
         if status == "ERR" {
             serde_json::from_str(error).ok()
         } else {

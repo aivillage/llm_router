@@ -8,12 +8,16 @@ use std::sync::Arc;
 pub mod errors;
 pub mod logging;
 pub mod single_turn;
+pub mod secret_manager;
 use single_turn::SingleTurnModels;
+
+use crate::secret_manager::Secrets;
 
 #[derive(Clone)]
 struct AppState {
     single_turn_models: Arc<SingleTurnModels>,
     redis_client: Option<redis::Client>,
+    secret_manager: Secrets,
 }
 
 async fn health() -> impl IntoResponse {
@@ -27,9 +31,10 @@ async fn generate(
 ) -> Result<Response> {
     tracing::trace!("generate called");
     let redis_client = app_state.redis_client.clone();
+    let secret_manager = app_state.secret_manager.clone();
     match app_state
         .single_turn_models
-        .generate(redis_client, request)
+        .generate(redis_client, secret_manager, request)
         .await
     {
         Ok(generation) => Ok(Json(generation).into_response()),
@@ -58,9 +63,12 @@ async fn main() -> anyhow::Result<()> {
 
     let single_turn_models = Arc::new(SingleTurnModels::new(model_path)?);
     let redis_client = redis_client();
+    let secret_manager = Secrets::from_env();
+
     let app_state = AppState {
         single_turn_models,
         redis_client,
+        secret_manager,
     };
 
     let app = Router::new()

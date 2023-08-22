@@ -1,6 +1,8 @@
 pub mod mock;
+pub mod huggingface;
 pub mod single_turn_trait;
 use crate::errors::ModelError;
+use crate::secret_manager;
 use anyhow::Context;
 use mock::MockModels;
 use redis::AsyncCommands;
@@ -29,9 +31,9 @@ impl GenerateResponse {
     }
 
     fn from_redis_string(s: &str, uuid: &str) -> Option<Self> {
-        let mut split = s.splitn(2, ':');
-        let status = split.next()?;
-        let generation = split.next()?;
+        let (status, generation) = s.split_once(':')?;
+        
+        
         if status == "OK" {
             Some(Self {
                 generation: generation.to_string(),
@@ -70,6 +72,13 @@ impl SingleTurnModels {
                     let mock_models = MockModels::new(&path);
                     for (name, model) in mock_models.models {
                         models.insert(name, Box::new(model));
+                    }
+                }
+                Some("huggingface.json") => {
+                    tracing::info!("Found huggingface.json, loading huggingface models");
+                    let huggingface_models = huggingface::HuggingFaceModels::new(&path)?;
+                    for model in huggingface_models.models {
+                        models.insert(model.name.clone(), Box::new(model));
                     }
                 }
                 _ => {}
@@ -132,6 +141,7 @@ impl SingleTurnModels {
     pub async fn generate(
         &self,
         mut redis_client: Option<redis::Client>,
+        secret_manager: secret_manager::Secrets,
         request: GenerateRequest,
     ) -> Result<GenerateResponse, ModelError> {
         if let Some(redis_client) = &mut redis_client {
@@ -146,7 +156,7 @@ impl SingleTurnModels {
         }
 
         let generation = match self.models.get(request.model.as_str()) {
-            Some(model) => model.generate(request.prompt, request.preprompt).await,
+            Some(model) => model.generate(secret_manager, request.prompt, request.preprompt).await,
             None => Err(ModelError::ModelNotFound),
         };
         let response = match generation {

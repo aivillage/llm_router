@@ -7,13 +7,14 @@ services:
       dockerfile: dockerfiles/Dockerfile.dev
     env_file:
       - ../.env.template
+      - ../.env_keys
     user: root
     restart: always
     ports:
       - "8000:8000"
     volumes:
       - ../.data/llm_router/logs:/var/log/llm_router
-      - ../models/mock.json:/opt/models/mock.json
+      - ../models/:/opt/models/
       - ../.data/target:/opt/llm_router/target/
     depends_on:
       cache:
