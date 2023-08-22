@@ -17,7 +17,7 @@ struct AppState {
 }
 
 async fn health() -> impl IntoResponse {
-    tracing::debug!("health called");
+    tracing::trace!("health called");
     "Ok"
 }
 
@@ -25,7 +25,7 @@ async fn generate(
     State(app_state): State<AppState>,
     Json(request): Json<single_turn::GenerateRequest>,
 ) -> Result<Response> {
-    tracing::debug!("generate called");
+    tracing::trace!("generate called");
     let redis_client = app_state.redis_client.clone();
     match app_state
         .single_turn_models
@@ -38,7 +38,7 @@ async fn generate(
 }
 
 async fn models(State(app_state): State<AppState>) -> Result<Response> {
-    tracing::debug!("models called");
+    tracing::trace!("models called");
     let models = app_state.single_turn_models.models().await?;
     Ok(Json(models).into_response())
 }
