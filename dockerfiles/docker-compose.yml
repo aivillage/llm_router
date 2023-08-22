@@ -1,0 +1,48 @@
+version: '2'
+
+services:
+  llm_router:
+    build: 
+      context: ../
+      dockerfile: dockerfiles/Dockerfile
+    env_file:
+      - ../.env.template
+    user: root
+    restart: always
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../.data/llm_router/logs:/var/log/llm_router
+      - ../models/mock.json:/opt/models/mock.json
+      - ../.data/target:/opt/llm_router/target/
+    depends_on:
+      cache:
+        condition: service_healthy
+    networks:
+        default:
+        internal:
+    healthcheck:
+      test: ["CMD", "curl","-f","http://localhost:8000/health"]
+      start_period: 5s
+      interval: 5s
+      timeout: 5s
+      retries: 55
+
+  cache:
+    image: redis:4
+    restart: always
+    volumes:
+    - ../.data/redis:/data
+    networks:
+        internal:
+    healthcheck:
+      test: ["CMD", "redis-cli","ping"]
+      start_period: 5s
+      interval: 5s
+      timeout: 5s
+      retries: 55
+
+networks:
+    default:
+    internal:
+        internal: true
