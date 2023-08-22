@@ -5,10 +5,9 @@ use axum::{
     Router,
 };
 use std::sync::Arc;
-pub mod llm_traits;
-pub mod mock;
 pub mod single_turn;
 pub mod logging;
+pub mod errors;
 use single_turn::SingleTurnModels;
 
 #[derive(Clone)]

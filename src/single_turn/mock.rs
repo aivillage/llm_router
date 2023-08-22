@@ -1,4 +1,5 @@
-use crate::llm_traits::{ModelError, SingleTurnLlm};
+use crate::errors::ModelError;
+use super::SingleTurnLlm;
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use serde_json;

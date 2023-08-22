@@ -1,4 +1,3 @@
-use async_trait::async_trait;
 use axum::{extract::Json,response::IntoResponse};
 use thiserror::Error;
 use serde::{Deserialize, Serialize};
@@ -52,17 +51,6 @@ impl IntoResponse for ModelError {
     }
 }
 
-#[async_trait]
-pub trait SingleTurnLlm {
-    fn name(&self) -> &str;
-    async fn generate(
-        &self,
-        prompt: String,
-        preprompt: Option<String>,
-    ) -> Result<String, ModelError>;
-}
-
 pub trait CacheAble {
     fn cache_key(&self) -> &str;
-
 }

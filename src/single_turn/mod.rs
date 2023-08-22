@@ -1,5 +1,8 @@
-use crate::llm_traits::{ModelError, SingleTurnLlm};
-use crate::mock::MockModels;
+pub mod single_turn_trait;
+pub mod mock;
+use single_turn_trait::SingleTurnLlm;
+use mock::MockModels;
+use crate::errors::ModelError;
 use anyhow::Context;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
