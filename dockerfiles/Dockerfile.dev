@@ -1,18 +1,17 @@
-FROM python:3.10-slim-bookworm as release
+FROM rust:1.71.1-slim-bookworm
 WORKDIR /opt/llm_router
 
-COPY --chown=1001:1001 . /opt/llm_router/
-RUN pip install --no-cache-dir -r requirements.txt
-RUN apt update && apt install -y curl
+RUN apt-get update && apt-get install -y \
+    libssl-dev \
+    pkg-config \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
 
-RUN useradd \
-    --no-log-init \
-    --shell /bin/bash \
-    -u 1001 \
-    llm_router \
-    && mkdir -p /var/log/llm_router \
-    && chown -R 1001:1001 /var/log/llm_router /opt/llm_router/llm_router
+# Install dependencies
+COPY ./src /opt/llm_router/src
+COPY ./Cargo.toml /opt/llm_router/Cargo.toml
+COPY ./Cargo.lock /opt/llm_router/Cargo.lock
 
-USER 1001
-EXPOSE 8000
-ENTRYPOINT ["uvicorn","llm_router.app:app", "--reload", "--host", "0.0.0.0", "--log-config", "logging.yml"]
+RUN chown -R 1000:1000 /opt/llm_router
+
+ENTRYPOINT [ "cargo", "run" ]

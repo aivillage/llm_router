@@ -12,7 +12,7 @@ services:
     volumes:
       - ../.data/llm_router/logs:/var/log/llm_router
       - ../models/mock.json:/opt/models/mock.json
-      - ../:/opt/llm_router:ro
+      - ../.data/target:/opt/llm_router/target/
     depends_on:
       cache:
         condition: service_healthy
