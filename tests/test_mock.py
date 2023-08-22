@@ -7,8 +7,8 @@ print("Running tests")
 with open("mock.json") as f:
     mock_models = json.load(f)
 
-short_response = mock_models["mock_model"]["short_response"]
-long_response = mock_models["mock_model"]["long_response"]
+short_response = mock_models["mock_model"]["short"]
+long_response = mock_models["mock_model"]["long"]
 
 url = "http://llm_router:8000"
 
@@ -29,7 +29,7 @@ def test_generate_error():
 
 def test_generate_long():
     uuid = str(uuid4())
-    payload = {"uuid": uuid, "prompt": "long_prompt", "preprompt": "test", "model": "mock_model"}
+    payload = {"uuid": uuid, "prompt": "prompt_too_long", "preprompt": "test", "model": "mock_model"}
     response = requests.post(url + "/generate", json=payload)
     assert response.status_code == 422
     response = requests.post(url + "/generate", json=payload)
