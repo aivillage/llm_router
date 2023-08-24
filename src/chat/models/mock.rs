@@ -1,5 +1,7 @@
-use super::SingleTurnLlm;
-use crate::errors::ModelError;
+use crate::{
+    chat::{chat_trait::ChatLlm, errors::ModelError, History},
+    secret_manager::Secrets,
+};
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use serde_json;
@@ -15,14 +17,21 @@ pub struct MockModel {
 }
 
 #[async_trait]
-impl SingleTurnLlm for MockModel {
+impl ChatLlm for MockModel {
     fn name(&self) -> &str {
         &self.name
     }
-    async fn generate(
+
+    fn context_size(&self) -> usize {
+        250
+    }
+
+    async fn chat(
         &self,
+        _secrets: Secrets,
         prompt: String,
-        _preprompt: Option<String>,
+        _system: Option<String>,
+        history: Vec<History>,
     ) -> Result<String, ModelError> {
         match prompt.as_str() {
             "upstream_error" => {
@@ -37,9 +46,9 @@ impl SingleTurnLlm for MockModel {
                 tracing::info!("Mocking prompt too long");
                 Err(ModelError::PromptTooLong)
             }
-            "preprompt_too_long" => {
-                tracing::info!("Mocking preprompt too long");
-                Err(ModelError::PrepromptTooLong)
+            "system_too_long" => {
+                tracing::info!("Mocking system too long");
+                Err(ModelError::SystemTooLong)
             }
             "error" => {
                 tracing::info!("Mocking other error");
@@ -47,11 +56,11 @@ impl SingleTurnLlm for MockModel {
             }
             "long_response" => {
                 tracing::info!("Mocking long response");
-                Ok(self.long.clone())
+                Ok(format!("response: {}, {}", history.len(),self.long.clone()))
             }
             _ => {
                 tracing::info!("Mocking short response");
-                Ok(self.short.clone())
+                Ok(format!("response: {}, {}", history.len(),self.short.clone()))
             }
         }
     }

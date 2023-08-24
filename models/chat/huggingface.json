@@ -1,0 +1,22 @@
+[
+    {
+        "name": "oasst-pythia-12b",
+        "url": "https://api-inference.huggingface.co/models/OpenAssistant/oasst-sft-4-pythia-12b-epoch-3.5",
+        "parameters": {
+            "max_new_tokens": 1024,
+            "repetition_penalty": 1.2,
+            "return_full_text": false,
+            "top_p": 0.95,
+            "temperature": 0.9,
+            "stop": ["<|endoftext|>"]
+        },
+        "prompt_format" : {
+            "system_token": "<|system|>",
+            "prompt_token": "<|prompter|>",
+            "assistant_token": "<|assistant|>",
+            "stop_token": "<|endoftext|>"
+        },
+        "context_size": 2048
+    }
+]
+

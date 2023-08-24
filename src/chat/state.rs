@@ -1,60 +1,24 @@
-pub mod mock;
-pub mod single_turn_trait;
-use crate::errors::ModelError;
+use super::models::{HuggingFaceModels, MockModels};
+use super::{chat_trait::ChatLlm, errors::ModelError, ChatRequest, ChatResponse};
+use crate::secret_manager;
 use anyhow::Context;
-use mock::MockModels;
 use redis::AsyncCommands;
 use serde::{Deserialize, Serialize};
-use single_turn_trait::SingleTurnLlm;
 use std::collections::HashMap;
 use std::path::Path;
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct GenerateRequest {
-    pub model: String,
-    pub prompt: String,
-    pub preprompt: Option<String>,
-    pub uuid: String,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct GenerateResponse {
-    pub generation: String,
-    pub uuid: String,
-}
-
-impl GenerateResponse {
-    fn to_redis_string(&self) -> String {
-        format!("OK:{}", self.generation)
-    }
-
-    fn from_redis_string(s: &str, uuid: &str) -> Option<Self> {
-        let mut split = s.splitn(2, ':');
-        let status = split.next()?;
-        let generation = split.next()?;
-        if status == "OK" {
-            Some(Self {
-                generation: generation.to_string(),
-                uuid: uuid.to_string(),
-            })
-        } else {
-            None
-        }
-    }
-}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ModelsResponse {
     pub models: Vec<String>,
 }
 
-pub struct SingleTurnModels {
-    models: HashMap<String, Box<dyn SingleTurnLlm + Send + Sync>>,
+pub struct ChatModels {
+    models: HashMap<String, Box<dyn ChatLlm + Send + Sync>>,
 }
 
-impl SingleTurnModels {
+impl ChatModels {
     pub fn new<P: AsRef<Path> + Send + Sync>(models_path: P) -> anyhow::Result<Self> {
-        let mut models: HashMap<String, Box<dyn SingleTurnLlm + Send + Sync>> = HashMap::new();
+        let mut models: HashMap<String, Box<dyn ChatLlm + Send + Sync>> = HashMap::new();
 
         for file in std::fs::read_dir(&models_path).with_context(|| {
             format!(
@@ -72,6 +36,13 @@ impl SingleTurnModels {
                         models.insert(name, Box::new(model));
                     }
                 }
+                Some("huggingface.json") => {
+                    tracing::info!("Found huggingface.json, loading huggingface models");
+                    let huggingface_models = HuggingFaceModels::new(&path)?;
+                    for model in huggingface_models.models {
+                        models.insert(model.name.clone(), Box::new(model));
+                    }
+                }
                 _ => {}
             }
         }
@@ -83,7 +54,7 @@ impl SingleTurnModels {
         &self,
         redis_client: &mut redis::Client,
         uuid: &str,
-    ) -> anyhow::Result<Option<Result<GenerateResponse, ModelError>>> {
+    ) -> anyhow::Result<Option<Result<ChatResponse, ModelError>>> {
         let mut redis_connection = redis_client
             .get_async_connection()
             .await
@@ -99,7 +70,7 @@ impl SingleTurnModels {
                 let error = ModelError::from_redis_string(&generation).unwrap();
                 Err(error)
             } else {
-                Ok(GenerateResponse::from_redis_string(&generation, uuid).unwrap())
+                Ok(ChatResponse::from_redis_string(&generation, uuid).unwrap())
             }
         }))
     }
@@ -108,7 +79,7 @@ impl SingleTurnModels {
         &self,
         redis_client: &mut redis::Client,
         uuid: &str,
-        generation: &Result<GenerateResponse, ModelError>,
+        generation: &Result<ChatResponse, ModelError>,
     ) -> anyhow::Result<()> {
         let mut redis_connection = redis_client
             .get_async_connection()
@@ -129,11 +100,12 @@ impl SingleTurnModels {
         Ok(())
     }
 
-    pub async fn generate(
+    pub async fn chat(
         &self,
         mut redis_client: Option<redis::Client>,
-        request: GenerateRequest,
-    ) -> Result<GenerateResponse, ModelError> {
+        secret_manager: secret_manager::Secrets,
+        mut request: ChatRequest,
+    ) -> Result<ChatResponse, ModelError> {
         if let Some(redis_client) = &mut redis_client {
             let cached_generation = self
                 .check_cache(redis_client, &request.uuid)
@@ -146,11 +118,24 @@ impl SingleTurnModels {
         }
 
         let generation = match self.models.get(request.model.as_str()) {
-            Some(model) => model.generate(request.prompt, request.preprompt).await,
-            None => Err(ModelError::ModelNotFound),
+            Some(model) => {
+                request.trim(model.as_ref())?;
+                model
+                    .chat(
+                        secret_manager,
+                        request.prompt,
+                        request.system,
+                        request.history,
+                    )
+                    .await
+            }
+            None => {
+                tracing::error!("Model not found: {}", request.model);
+                Err(ModelError::ModelNotFound)
+            }
         };
         let response = match generation {
-            Ok(generation) => Ok(GenerateResponse {
+            Ok(generation) => Ok(ChatResponse {
                 generation,
                 uuid: request.uuid.clone(),
             }),

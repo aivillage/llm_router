@@ -13,16 +13,19 @@ pub enum ModelError {
     ModelNotFound,
     #[error("Model had an upstream error")]
     UpstreamModelError,
+    #[error("History prompt {0} was too long")]
+    HistoryPromptTooLong(u64),
     #[error("Exceded Rate Limit, try again in {0} miliseconds")]
     RateLimitExceeded(u64),
     #[error("Prompt was too long")]
     PromptTooLong,
     #[error("Preprompt was too long")]
-    PrepromptTooLong,
+    SystemTooLong,
     #[error("Other error: {0}")]
     Other(String),
 }
 
+// This should be improved
 impl IntoResponse for ModelError {
     fn into_response(self) -> axum::response::Response {
         let (code, reason) = match self {
@@ -34,12 +37,16 @@ impl IntoResponse for ModelError {
                 reqwest::StatusCode::TOO_MANY_REQUESTS,
                 "Rate limit exceeded",
             ),
+            ModelError::HistoryPromptTooLong(_) => (
+                reqwest::StatusCode::UNPROCESSABLE_ENTITY,
+                "Historical prompt too long",
+            ),
             ModelError::PromptTooLong => {
                 (reqwest::StatusCode::UNPROCESSABLE_ENTITY, "Prompt too long")
             }
-            ModelError::PrepromptTooLong => (
+            ModelError::SystemTooLong => (
                 reqwest::StatusCode::UNPROCESSABLE_ENTITY,
-                "Preprompt too long",
+                "System prompt too long",
             ),
             ModelError::Other(_) => (reqwest::StatusCode::INTERNAL_SERVER_ERROR, "Other error"),
             ModelError::ModelNotFound => (reqwest::StatusCode::NOT_FOUND, "Model not found"),
@@ -60,9 +67,8 @@ impl ModelError {
     }
 
     pub fn from_redis_string(s: &str) -> Option<Self> {
-        let mut split = s.splitn(2, ':');
-        let status = split.next()?;
-        let error = split.next()?;
+        let (status, error) = s.split_once(':')?;
+
         if status == "ERR" {
             serde_json::from_str(error).ok()
         } else {

@@ -5,4 +5,4 @@ COPY --chown=1001:1001 . /opt/llm_router_tests/
 RUN pip install --no-cache-dir -r requirements.txt
 RUN apt update && apt install -y curl
 
-ENTRYPOINT ["pytest", "test_mock.py"]
+ENTRYPOINT ["pytest"]
