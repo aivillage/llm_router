@@ -31,7 +31,7 @@ impl ChatLlm for MockModel {
         _secrets: Secrets,
         prompt: String,
         _system: Option<String>,
-        _history: Vec<History>,
+        history: Vec<History>,
     ) -> Result<String, ModelError> {
         match prompt.as_str() {
             "upstream_error" => {
@@ -56,11 +56,11 @@ impl ChatLlm for MockModel {
             }
             "long_response" => {
                 tracing::info!("Mocking long response");
-                Ok(self.long.clone())
+                Ok(format!("response: {}, {}", history.len(),self.long.clone()))
             }
             _ => {
                 tracing::info!("Mocking short response");
-                Ok(self.short.clone())
+                Ok(format!("response: {}, {}", history.len(),self.short.clone()))
             }
         }
     }

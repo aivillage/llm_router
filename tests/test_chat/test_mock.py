@@ -23,7 +23,7 @@ def test_generate():
     payload = {"uuid": uuid, "prompt": "test", "system": "test", "model": "mock_model"}
     response = requests.post(url + "/chat/generate", json=payload)
     assert response.status_code == 200
-    assert response.json()["generation"] == short_response
+    assert response.json()["generation"].endswith(short_response)
 
 def test_generate_error():
     uuid = str(uuid4())
@@ -46,7 +46,7 @@ def test_generate_long_response():
     payload = {"uuid": uuid, "prompt": "long_response", "system": "test", "model": "mock_model"}
     response = requests.post(url + "/chat/generate", json=payload)
     assert response.status_code == 200
-    assert response.json()["generation"] == long_response
+    assert response.json()["generation"].endswith(long_response)
 
 def test_generate_model_not_found():
     uuid = str(uuid4())
@@ -61,9 +61,26 @@ def test_generate_cache():
     payload = {"uuid": uuid, "prompt": "test", "system": "test", "model": "mock_model"}
     response = requests.post(url + "/chat/generate", json=payload)
     assert response.status_code == 200
-    assert response.json()["generation"] == short_response
+    assert response.json()["generation"].startswith("response: 0,")
+    assert response.json()["generation"].endswith(short_response)
     response = requests.post(url + "/chat/generate", json=payload)
     assert response.status_code == 200
-    assert response.json()["generation"] == short_response
+    assert response.json()["generation"].startswith("response: 0,")
+    assert response.json()["generation"].endswith(short_response)
 
+def test_generate_chat():
+    uuid = str(uuid4())
+    payload = {"uuid": uuid, "prompt": "test", "system": "test", "model": "mock_model"}
+    response = requests.post(url + "/chat/generate", json=payload)
+    history = [{"prompt": "test", "generation": response.json()["generation"]}]
+    uuid = str(uuid4())
+    payload = {"uuid": uuid, "prompt": "test", "system": "test", "model": "mock_model", "history": history}
+    response = requests.post(url + "/chat/generate", json=payload)
+    assert response.status_code == 200
+    assert response.json()["generation"].startswith("response: 1,")
+    assert response.json()["generation"].endswith(short_response)
+    response = requests.post(url + "/chat/generate", json=payload)
+    assert response.status_code == 200
+    assert response.json()["generation"].startswith("response: 1,")
+    assert response.json()["generation"].endswith(short_response)
 
