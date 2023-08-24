@@ -1,21 +1,12 @@
-use axum::{
-    extract::{Json, State},
-    response::{IntoResponse, Response, Result},
-    routing::{get, post},
-    Router,
-};
-use std::sync::Arc;
-pub mod errors;
+use axum::{response::IntoResponse, routing::get, Router};
+pub mod chat;
 pub mod logging;
-pub mod single_turn;
 pub mod secret_manager;
-use single_turn::SingleTurnModels;
 
 use crate::secret_manager::Secrets;
 
 #[derive(Clone)]
-struct AppState {
-    single_turn_models: Arc<SingleTurnModels>,
+pub struct AppState {
     redis_client: Option<redis::Client>,
     secret_manager: Secrets,
 }
@@ -23,29 +14,6 @@ struct AppState {
 async fn health() -> impl IntoResponse {
     tracing::trace!("health called");
     "Ok"
-}
-
-async fn generate(
-    State(app_state): State<AppState>,
-    Json(request): Json<single_turn::GenerateRequest>,
-) -> Result<Response> {
-    tracing::trace!("generate called");
-    let redis_client = app_state.redis_client.clone();
-    let secret_manager = app_state.secret_manager.clone();
-    match app_state
-        .single_turn_models
-        .generate(redis_client, secret_manager, request)
-        .await
-    {
-        Ok(generation) => Ok(Json(generation).into_response()),
-        Err(e) => Ok(e.into_response()),
-    }
-}
-
-async fn models(State(app_state): State<AppState>) -> Result<Response> {
-    tracing::trace!("models called");
-    let models = app_state.single_turn_models.models().await?;
-    Ok(Json(models).into_response())
 }
 
 fn redis_client() -> Option<redis::Client> {
@@ -59,27 +27,23 @@ fn redis_client() -> Option<redis::Client> {
 #[tokio::main(flavor = "multi_thread")]
 async fn main() -> anyhow::Result<()> {
     logging::init_logging();
-    let model_path = std::env::var("MODEL_DIR").unwrap_or_else(|_| "/opt/models/".to_string());
 
-    let single_turn_models = Arc::new(SingleTurnModels::new(model_path)?);
     let redis_client = redis_client();
     let secret_manager = Secrets::from_env();
 
     let app_state = AppState {
-        single_turn_models,
         redis_client,
         secret_manager,
     };
 
+    let chat_router = chat::chat_router(app_state.clone()).await?;
+
     let app = Router::new()
         .route("/health", get(health))
-        .route("/generate", post(generate))
-        .with_state(app_state.clone())
-        .route("/models", get(models))
-        .with_state(app_state);
+        .nest("/chat", chat_router);
 
     let address = &"0.0.0.0:8000".parse().unwrap();
-    tracing::debug!("listening on {}", address);
+    tracing::info!("listening on {}", address);
     axum::Server::bind(address)
         .serve(app.into_make_service())
         .await

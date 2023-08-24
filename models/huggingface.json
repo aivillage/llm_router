@@ -15,7 +15,8 @@
             "prompt_token": "<|prompter|>",
             "assistant_token": "<|assistant|>",
             "stop_token": "<|endoftext|>"
-        }
+        },
+        "context_size": 2048
     }
 ]
 

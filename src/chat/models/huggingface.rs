@@ -1,5 +1,7 @@
-use super::SingleTurnLlm;
-use crate::{errors::ModelError, secret_manager::Secrets};
+use crate::{
+    chat::{chat_trait::ChatLlm, errors::ModelError, History},
+    secret_manager::Secrets,
+};
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use serde_json;
@@ -33,6 +35,7 @@ pub struct HuggingFaceModel {
     pub url: String,
     pub parameters: HuggingFaceModelParameters,
     pub prompt_format: HuggingFacePromptFormat,
+    pub context_size: usize,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -42,28 +45,51 @@ struct Generation {
 
 type HuggingFaceResponse = Vec<Generation>;
 
-
 #[async_trait]
-impl SingleTurnLlm for HuggingFaceModel {
+impl ChatLlm for HuggingFaceModel {
     fn name(&self) -> &str {
         &self.name
     }
 
-    async fn generate(
+    fn context_size(&self) -> usize {
+        self.context_size
+    }
+
+    async fn chat(
         &self,
         secrets: Secrets,
         prompt: String,
-        preprompt: Option<String>,
+        system: Option<String>,
+        history: Vec<History>,
     ) -> Result<String, ModelError> {
         let mut full_prompt = String::new();
-        if let Some(preprompt) = preprompt {
-            full_prompt.push_str(&format!("{}{}{}", self.prompt_format.system_token, preprompt, self.prompt_format.stop_token));
+        if let Some(system) = system {
+            full_prompt.push_str(&format!(
+                "{}{}{}",
+                self.prompt_format.system_token, system, self.prompt_format.stop_token
+            ));
         }
-        full_prompt.push_str(&format!("{}{}{}", self.prompt_format.prompt_token, prompt, self.prompt_format.stop_token));
+        for h in history {
+            full_prompt.push_str(&format!(
+                "{}{}{}",
+                self.prompt_format.prompt_token, h.prompt, self.prompt_format.stop_token
+            ));
+            full_prompt.push_str(&format!(
+                "{}{}{}",
+                self.prompt_format.assistant_token, h.generation, self.prompt_format.stop_token
+            ));
+        }
+        full_prompt.push_str(&format!(
+            "{}{}{}",
+            self.prompt_format.prompt_token, prompt, self.prompt_format.stop_token
+        ));
         full_prompt.push_str(self.prompt_format.assistant_token.as_str());
-        
+
         let client = Client::new();
-        let auth_token = secrets.get_secret("HUGGINGFACE_API_TOKEN").await.ok_or(ModelError::Other("Missing Auth".to_string()))?;
+        let auth_token = secrets
+            .get_secret("HUGGINGFACE_API_TOKEN")
+            .await
+            .ok_or(ModelError::Other("Missing Auth".to_string()))?;
         let response = client
             .post(&self.url)
             .json(&serde_json::json!({
@@ -79,7 +105,13 @@ impl SingleTurnLlm for HuggingFaceModel {
                 ModelError::UpstreamModelError
             })?;
         if response.status().is_server_error() {
-            tracing::error!("Error from huggingface: {}", response.text().await.unwrap_or_else(|_| "Unknown".to_string()));
+            tracing::error!(
+                "Error from huggingface: {}",
+                response
+                    .text()
+                    .await
+                    .unwrap_or_else(|_| "Unknown".to_string())
+            );
             return Err(ModelError::UpstreamModelError);
         }
 
@@ -90,12 +122,18 @@ impl SingleTurnLlm for HuggingFaceModel {
                     return Err(ModelError::RateLimitExceeded(1000));
                 }
                 _ => {
-                    tracing::error!("Error from huggingface: {}", response.text().await.unwrap_or_else(|_| "Unknown".to_string()));
+                    tracing::error!(
+                        "Error from huggingface: {}",
+                        response
+                            .text()
+                            .await
+                            .unwrap_or_else(|_| "Unknown".to_string())
+                    );
                     return Err(ModelError::UpstreamModelError);
                 }
             }
         }
-            
+
         let mut response: HuggingFaceResponse = response.json().await.map_err(|e| {
             tracing::error!("Error parsing response from huggingface: {}", e);
             ModelError::UpstreamModelError
@@ -118,5 +156,5 @@ impl HuggingFaceModels {
         let file = std::fs::File::open(file)?;
         let models: Vec<HuggingFaceModel> = serde_json::from_reader(file)?;
         Ok(Self { models })
-    } 
+    }
 }
