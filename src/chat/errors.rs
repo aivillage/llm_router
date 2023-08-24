@@ -13,7 +13,7 @@ pub enum ModelError {
     ModelNotFound,
     #[error("Model had an upstream error")]
     UpstreamModelError,
-    #[error("Exceded Rate Limit, try again in {0} miliseconds")]
+    #[error("History prompt {0} was too long")]
     HistoryPromptTooLong(u64),
     #[error("Exceded Rate Limit, try again in {0} miliseconds")]
     RateLimitExceeded(u64),
