@@ -4,7 +4,7 @@ services:
   llm_router_test:
     build: .
     volumes:
-      - ../models/mock.json:/opt/llm_router_tests/mock.json
+      - ../models/chat/mock.json:/opt/llm_router_tests/mock.json:ro
     depends_on:
       llm_router:
         condition: service_healthy

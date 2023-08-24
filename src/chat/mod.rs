@@ -1,5 +1,5 @@
 //! Chat module
-//! 
+//!
 //! This module contains the chat router and the chat models.
 
 pub mod chat_trait;
@@ -15,7 +15,7 @@ use axum::{
     routing::{get, post},
     Router,
 };
-use std::sync::Arc;
+use std::{path::Path, sync::Arc};
 
 use self::state::ChatModels;
 
@@ -34,7 +34,7 @@ pub struct History {
 pub struct ChatRequest {
     pub uuid: String,
     pub model: String,
-
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub system: Option<String>,
     pub prompt: String,
     #[serde(default = "Vec::new")]
@@ -79,7 +79,8 @@ pub struct ChatState {
 
 pub async fn chat_router(app_state: AppState) -> anyhow::Result<Router> {
     let model_path = std::env::var("MODEL_DIR").unwrap_or_else(|_| "/opt/models/".to_string());
-    let chat_models = Arc::new(ChatModels::new(model_path)?);
+    let chat_path = Path::new(model_path.as_str()).join("chat");
+    let chat_models = Arc::new(ChatModels::new(chat_path)?);
 
     let chat_state = ChatState {
         chat_models,

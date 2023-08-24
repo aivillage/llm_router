@@ -7,6 +7,6 @@ url = "http://llm_router:8000"
 def test_generate_huggingface():
     uuid = str(uuid4())
     payload = {"uuid": uuid, "prompt": "test", "preprompt": "test", "model": "oasst-pythia-12b"}
-    response = requests.post(url + "/chat", json=payload)
+    response = requests.post(url + "/chat/generate", json=payload)
     assert response.status_code == 200
     assert response.json()["generation"] != ""
