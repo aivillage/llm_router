@@ -85,11 +85,12 @@ impl ChatLlm for HuggingFaceModel {
         ));
         full_prompt.push_str(self.prompt_format.assistant_token.as_str());
 
-        let client = Client::new();
         let auth_token = secrets
             .get_secret("HUGGINGFACE_API_TOKEN")
             .await
             .ok_or(ModelError::Other("Missing Auth".to_string()))?;
+
+        let client = Client::new();
         let response = client
             .post(&self.url)
             .json(&serde_json::json!({
@@ -104,6 +105,7 @@ impl ChatLlm for HuggingFaceModel {
                 tracing::error!("Error sending request to huggingface: {}", e);
                 ModelError::UpstreamModelError
             })?;
+
         if response.status().is_server_error() {
             tracing::error!(
                 "Error from huggingface: {}",
