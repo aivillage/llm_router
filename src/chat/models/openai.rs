@@ -9,11 +9,10 @@ use reqwest::Client;
 
 const API_URL_V1: &str = "https://api.openai.com/v1";
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Default)]
 pub struct OpenAIParameters {
     pub temperature: Option<f64>,
     pub top_p: Option<f64>,
-    pub stream: Option<bool>,
     pub stop: Option<Vec<String>>,
     pub max_tokens: Option<i64>,
     pub presence_penalty: Option<f64>,
@@ -30,8 +29,6 @@ pub struct ChatCompletionRequest {
     pub temperature: Option<f64>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub top_p: Option<f64>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub stream: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub stop: Option<Vec<String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -109,6 +106,7 @@ pub enum FinishReason {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct OpenAIModel {
     pub name: String,
+    pub model: String,
     pub parameters: OpenAIParameters,
     pub context_size: usize,
 }
@@ -156,11 +154,10 @@ impl ChatLlm for OpenAIModel {
             name: None,
         });
         let request = ChatCompletionRequest {
-            model: self.name.clone(),
+            model: self.model.clone(),
             messages,
             temperature: self.parameters.temperature,
             top_p: self.parameters.top_p,
-            stream: self.parameters.stream,
             stop: self.parameters.stop.clone(),
             max_tokens: self.parameters.max_tokens,
             presence_penalty: self.parameters.presence_penalty,
