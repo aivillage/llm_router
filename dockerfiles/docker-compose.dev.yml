@@ -14,7 +14,7 @@ services:
       - "8000:8000"
     volumes:
       - ../.data/llm_router/logs:/var/log/llm_router
-      - ../models/:/opt/models/
+      - ../models/:/opt/models/:ro
       - ../.data/target:/opt/llm_router/target/
     depends_on:
       cache:
