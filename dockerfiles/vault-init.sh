@@ -1,8 +1,6 @@
 #!/bin/sh
-echo "Waiting for Vault..."
+echo "Waiting for Vault to sufficiently start..."
 sleep 3
-
-echo "Vault Started."
 
 echo "Authenticate into Vault"
 # Authenticate to Vault
