@@ -7,6 +7,7 @@ This is meant to simplify and unify the API intefaces of the different APIs used
 **Objectives:**
 
 - Simplify and unify the interface across various LLMs
+- Allow for anonymous model names. The model names in the API should not be tied to actual model names.
 - Seperate keys and other important information from the competition's endpoint
 - Provide idempotency so that the competition endpoint can safely retry
 - Minimize network traffic
@@ -27,6 +28,4 @@ At V1:
 
 # Development
 
-To launch a dev instance `docker compose -f dockerfiles/docker-compose.dev.yml up --build`
-
-To run tests `docker compose -f tests/docker-compose.yml run llm_router_test`xx
+To launch a dev instance run `make up`, to run tests run `make test`, and to publish a development image run `make publish_dev`.
