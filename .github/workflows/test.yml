@@ -1,0 +1,22 @@
+name: Test LLM Router
+on:
+ push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+
+permissions:
+  contents: read
+
+
+jobs:
+  post_issue:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Run a one-line script
+    - uses: actions/checkout@v2
+      run: |
+        echo Hello from Octo Organization
+        touch .env_keys
+        make test
