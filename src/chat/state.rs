@@ -37,6 +37,13 @@ impl ChatModels {
                         models.insert(name, Box::new(model));
                     }
                 }
+                Some("reflection.json") => {
+                    tracing::info!("Found reflection.json, loading reflection model");
+                    let reflection_model = ReflectionModel::new(&path);
+                    for (name, model) in reflection_model.models {
+                        models.insert(name, Box::new(model));
+                    }
+                }
                 Some("huggingface.json") => {
                     tracing::info!("Found huggingface.json, loading huggingface models");
                     let huggingface_models = HuggingFaceModels::new(&path)?;
