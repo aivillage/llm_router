@@ -10,7 +10,7 @@ use std::path::Path;
 use tracing;
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct MockModel {
+pub struct ReflectionModel {
     pub name: String,
 }
 
@@ -66,14 +66,14 @@ impl ChatLlm for ReflectionModel {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct MockModels {
-    pub models: HashMap<String, MockModel>,
+pub struct ReflectionModel {
+    pub models: HashMap<String, ReflectionModel>,
 }
 
-impl MockModels {
+impl ReflectionModel {
     pub fn new<P: AsRef<Path> + Send + Sync>(file: P) -> Self {
         let contents = std::fs::read_to_string(file).unwrap();
-        let models: HashMap<String, MockModel> = serde_json::from_str(&contents).unwrap();
+        let models: HashMap<String, ReflectionModel> = serde_json::from_str(&contents).unwrap();
         Self { models }
     }
 }
