@@ -41,7 +41,7 @@ pub struct ReflectionModels {
     pub models: HashMap<String, ReflectionModel>,
 }
 
-impl ReflectionModel {
+impl ReflectionModels {
     pub fn new<P: AsRef<Path> + Send + Sync>(file: P) -> Self {
         let contents = std::fs::read_to_string(file).unwrap();
         // let models: Vec<ReflectionModel> = serde_json::from_str(&contents).unwrap();
