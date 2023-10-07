@@ -7,12 +7,16 @@ use serde::{Deserialize, Serialize};
 use serde_json;
 use std::collections::HashMap;
 use std::path::Path;
-use tracing;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ReflectionModel {
     pub name: String,
 }
+
+// #[derive(Debug, Serialize, Deserialize)]
+// pub struct ReflectionModel {
+//     pub models: HashMap<String, ReflectionModel>,
+// }
 
 #[async_trait]
 impl ChatLlm for ReflectionModel {
@@ -31,14 +35,11 @@ impl ChatLlm for ReflectionModel {
         _system: Option<String>,
         history: Vec<History>,
     ) -> Result<String, ModelError> {
-        Ok(format!("history: {}, promt: {}", history, prompt))
+        // Ok(format!("history: {}, prompt: {}", history, prompt))
+        Ok(format!("prompt: {}", prompt))
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct ReflectionModel {
-    pub models: HashMap<String, ReflectionModel>,
-}
 
 impl ReflectionModel {
     pub fn new<P: AsRef<Path> + Send + Sync>(file: P) -> Self {
