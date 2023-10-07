@@ -31,8 +31,6 @@ jobs:
         # Separating build and run didn't work
         # make build_test
 
-
-
     - name: Run tests except internal
       run: |
         make test -v -m "not external"
