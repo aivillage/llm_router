@@ -32,36 +32,6 @@ impl ChatLlm for ReflectionModel {
         history: Vec<History>,
     ) -> Result<String, ModelError> {
         Ok(format!("history: {}, promt: {}", history, prompt))
-        // match prompt.as_str() {
-        //     "upstream_error" => {
-        //         tracing::info!("Mocking upstream error");
-        //         Err(ModelError::UpstreamModelError)
-        //     }
-        //     "rate_limit" => {
-        //         tracing::info!("Mocking rate limit");
-        //         Err(ModelError::RateLimitExceeded(1000))
-        //     }
-        //     "prompt_too_long" => {
-        //         tracing::info!("Mocking prompt too long");
-        //         Err(ModelError::PromptTooLong)
-        //     }
-        //     "system_too_long" => {
-        //         tracing::info!("Mocking system too long");
-        //         Err(ModelError::SystemTooLong)
-        //     }
-        //     "error" => {
-        //         tracing::info!("Mocking other error");
-        //         Err(ModelError::Other("Other error".to_string()))
-        //     }
-        //     "long_response" => {
-        //         tracing::info!("Mocking long response");
-        //         Ok(format!("response: {}, {}", history.len(),self.long.clone()))
-        //     }
-        //     _ => {
-        //         tracing::info!("Mocking short response");
-        //         Ok(format!("response: {}, {}", history.len(),self.short.clone()))
-        //     }
-        // }
     }
 }
 
