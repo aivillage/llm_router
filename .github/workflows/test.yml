@@ -15,7 +15,7 @@ jobs:
   tests:
     runs-on: ubuntu-latest
     steps:
-    - name: Run a one-line script
+    - name: Checkout repo
       uses: actions/checkout@v2
 
     - name: Install Rust
@@ -24,8 +24,15 @@ jobs:
         toolchain: stable
         override: true
 
-    - name: Run tests
+    - name: Build test environment
       run: |
         touch .env_keys
         cargo generate-lockfile
+
+        # Building in this step to
+        make build_test
+
+    - name: Run tests
+      run: |
         make test
+
