@@ -27,5 +27,7 @@ At V1:
 - [ ] Production docker image 
 
 # Development
+1. Cargo first so you can generate a Cargo.lock
+2. Create a `.env_keys` file. It can be empty
 
 To launch a dev instance run `make up`, to run tests run `make test`, and to publish a development image run `make publish_dev`.
