@@ -18,9 +18,14 @@ jobs:
     - name: Run a one-line script
       uses: actions/checkout@v2
 
-    - name: Run tests
+    - name: Install Rust
       uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        override: true
+
+    - name: Run tests
       run: |
-        echo Hello from Octo Organization
         touch .env_keys
+        cargo generate-lockfile
         make test
