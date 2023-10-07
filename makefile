@@ -1,6 +1,9 @@
 up:
 	docker compose -f dockerfiles/docker-compose.dev.yml up --build
 
+build_test:
+	docker compose -f tests/docker-compose.yml build llm_router_test
+
 test:
 	docker compose -f tests/docker-compose.yml run llm_router_test
 

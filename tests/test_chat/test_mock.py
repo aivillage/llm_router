@@ -12,11 +12,13 @@ long_response = mock_models["mock_model"]["long"]
 
 url = "http://llm_router:8000"
 
+
 def test_models():
     response = requests.get(url + "/chat/models")
     assert response.status_code == 200
     print(response.json())
     assert set(mock_models.keys()).issubset(set(response.json()["models"]))
+
 
 def test_generate():
     uuid = str(uuid4())
@@ -24,6 +26,7 @@ def test_generate():
     response = requests.post(url + "/chat/generate", json=payload)
     assert response.status_code == 200
     assert response.json()["generation"].endswith(short_response)
+
 
 def test_generate_error():
     uuid = str(uuid4())
@@ -33,20 +36,33 @@ def test_generate_error():
     response = requests.post(url + "/chat/generate", json=payload)
     assert response.status_code == 500
 
+
 def test_generate_long():
     uuid = str(uuid4())
-    payload = {"uuid": uuid, "prompt": "prompt_too_long", "system": "test", "model": "mock_model"}
+    payload = {
+        "uuid": uuid,
+        "prompt": "prompt_too_long",
+        "system": "test",
+        "model": "mock_model",
+    }
     response = requests.post(url + "/chat/generate", json=payload)
     assert response.status_code == 422
     response = requests.post(url + "/chat/generate", json=payload)
     assert response.status_code == 422
 
+
 def test_generate_long_response():
     uuid = str(uuid4())
-    payload = {"uuid": uuid, "prompt": "long_response", "system": "test", "model": "mock_model"}
+    payload = {
+        "uuid": uuid,
+        "prompt": "long_response",
+        "system": "test",
+        "model": "mock_model",
+    }
     response = requests.post(url + "/chat/generate", json=payload)
     assert response.status_code == 200
     assert response.json()["generation"].endswith(long_response)
+
 
 def test_generate_model_not_found():
     uuid = str(uuid4())
@@ -55,6 +71,7 @@ def test_generate_model_not_found():
     assert response.status_code == 404
     response = requests.post(url + "/chat/generate", json=payload)
     assert response.status_code == 404
+
 
 def test_generate_cache():
     uuid = str(uuid4())
@@ -68,13 +85,20 @@ def test_generate_cache():
     assert response.json()["generation"].startswith("response: 0,")
     assert response.json()["generation"].endswith(short_response)
 
+
 def test_generate_chat():
     uuid = str(uuid4())
     payload = {"uuid": uuid, "prompt": "test", "system": "test", "model": "mock_model"}
     response = requests.post(url + "/chat/generate", json=payload)
     history = [{"prompt": "test", "generation": response.json()["generation"]}]
     uuid = str(uuid4())
-    payload = {"uuid": uuid, "prompt": "test", "system": "test", "model": "mock_model", "history": history}
+    payload = {
+        "uuid": uuid,
+        "prompt": "test",
+        "system": "test",
+        "model": "mock_model",
+        "history": history,
+    }
     response = requests.post(url + "/chat/generate", json=payload)
     assert response.status_code == 200
     assert response.json()["generation"].startswith("response: 1,")
@@ -83,4 +107,3 @@ def test_generate_chat():
     assert response.status_code == 200
     assert response.json()["generation"].startswith("response: 1,")
     assert response.json()["generation"].endswith(short_response)
-

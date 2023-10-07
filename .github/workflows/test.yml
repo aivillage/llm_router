@@ -1,6 +1,7 @@
-name: Test LLM Router
+name: Tests
+
 on:
- push:
+  push:
     branches: [ main ]
   pull_request:
     branches: [ main ]
@@ -11,12 +12,26 @@ permissions:
 
 
 jobs:
-  post_issue:
+  tests:
     runs-on: ubuntu-latest
     steps:
-    - name: Run a one-line script
-    - uses: actions/checkout@v2
+    - name: Checkout repo
+      uses: actions/checkout@v2
+
+    - name: Install Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        override: true
+    
+    - name: Build test environment
       run: |
-        echo Hello from Octo Organization
         touch .env_keys
-        make test
+        cargo generate-lockfile
+        # Separating build and run didn't work
+        # make build_test
+
+    - name: Run tests except internal
+      run: |
+        make test -v -m "not external"
+
