@@ -1,3 +1,4 @@
+import pytest
 import requests
 import json
 from uuid import uuid4
@@ -19,8 +20,10 @@ def generate_for_model(model: str):
     generation = response.json()["generation"]
     assert generation != ""
 
+@pytest.mark.external
 def test_generate_huggingface():
     generate_for_model("oasst-pythia-12b")
 
+@pytest.mark.external
 def test_generate_openai():
     generate_for_model("gpt-3.5-turbo")

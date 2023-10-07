@@ -24,11 +24,6 @@ jobs:
         toolchain: stable
         override: true
     
-    - name: Remove External Tests
-      run: |
-        # This is a total hack to remove external tests for CI
-        rm tests/test_chat/test_models.py
-
     - name: Build test environment
       run: |
         touch .env_keys
@@ -38,7 +33,7 @@ jobs:
 
 
 
-    - name: Run tests
+    - name: Run tests except internal
       run: |
-        make test
+        make test -v -m "not external"
 
