@@ -1,4 +1,4 @@
-use super::models::{HuggingFaceModels, MockModels, ReflectionModel};
+use super::models::{HuggingFaceModels, MockModels, ReflectionModels};
 use super::{chat_trait::ChatLlm, errors::ModelError, ChatRequest, ChatResponse};
 use crate::chat::models::OpenAIModels;
 use crate::secret_manager;
