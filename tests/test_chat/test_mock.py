@@ -79,7 +79,7 @@ def test_generate_model_not_found():
 
 
 def test_generate_cache():
-    "Tests caching. Expected behavior is that response is the same"
+    """Tests caching. Expected behavior is that response is the same"""
     uuid = str(uuid4())
     payload = {"uuid": uuid, "prompt": "test", "system": "test", "model": "mock_model"}
     
