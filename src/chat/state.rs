@@ -39,8 +39,8 @@ impl ChatModels {
                 }
                 Some("reflection.json") => {
                     tracing::info!("Found reflection.json, loading reflection model");
-                    let reflection_model = ReflectionModel::new(&path);
-                    for (name, model) in reflection_model.models {
+                    let reflection_models = ReflectionModels::new(&path);
+                    for (name, model) in reflection_models.models {
                         models.insert(name, Box::new(model));
                     }
                 }

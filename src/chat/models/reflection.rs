@@ -10,9 +10,8 @@ use std::path::Path;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ReflectionModel {
-    pub name: String,
+    pub name: String
 }
-
 
 #[async_trait]
 impl ChatLlm for ReflectionModel {
@@ -38,13 +37,15 @@ impl ChatLlm for ReflectionModel {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ReflectionModels {
-    pub models: Vec<ReflectionModel>,
+    // pub models: Vec<ReflectionModel>,
+    pub models: HashMap<String, ReflectionModel>,
 }
 
 impl ReflectionModel {
     pub fn new<P: AsRef<Path> + Send + Sync>(file: P) -> Self {
         let contents = std::fs::read_to_string(file).unwrap();
-        let models: Vec<ReflectionModel> = serde_json::from_str(&contents).unwrap();
+        // let models: Vec<ReflectionModel> = serde_json::from_str(&contents).unwrap();
+        let models: HashMap<String, ReflectionModel> = serde_json::from_str(&contents).unwrap();
         Self { models }
     }
 }
