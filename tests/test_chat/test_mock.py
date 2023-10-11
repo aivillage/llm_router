@@ -2,8 +2,6 @@ import requests
 import json
 from uuid import uuid4
 
-print("Running tests")
-
 with open("mock.json") as f:
     mock_models = json.load(f)
 
@@ -13,19 +11,26 @@ long_response = mock_models["mock_model"]["long"]
 url = "http://llm_router:8000"
 
 
-def test_models():
+def test_modes():
+    """Checks that the list of models is returned correctly"""
+    mock_model_names = set(mock_models.keys())
+
     response = requests.get(url + "/chat/models")
     assert response.status_code == 200
     print(response.json())
-    assert set(mock_models.keys()).issubset(set(response.json()["models"]))
+
+    llm_router_returned_names = set(response.json()["models"])
+
+    assert mock_model_names.issubset(llm_router_returned_names)
 
 
 def test_generate():
+    """Test that that llm router """
     uuid = str(uuid4())
     payload = {"uuid": uuid, "prompt": "test", "system": "test", "model": "mock_model"}
     response = requests.post(url + "/chat/generate", json=payload)
     assert response.status_code == 200
-    assert response.json()["generation"].endswith(short_response)
+    assert response.json()["generation"] == f"response: 0, {short_response}"
 
 
 def test_generate_error():
@@ -74,16 +79,15 @@ def test_generate_model_not_found():
 
 
 def test_generate_cache():
+    """Tests caching. Expected behavior is that response is the same"""
     uuid = str(uuid4())
     payload = {"uuid": uuid, "prompt": "test", "system": "test", "model": "mock_model"}
-    response = requests.post(url + "/chat/generate", json=payload)
-    assert response.status_code == 200
-    assert response.json()["generation"].startswith("response: 0,")
-    assert response.json()["generation"].endswith(short_response)
-    response = requests.post(url + "/chat/generate", json=payload)
-    assert response.status_code == 200
-    assert response.json()["generation"].startswith("response: 0,")
-    assert response.json()["generation"].endswith(short_response)
+    
+    for _ in range(2):
+        response = requests.post(url + "/chat/generate", json=payload)
+        assert response.status_code == 200
+        assert response.json()["generation"].startswith("response: 0,")
+        assert response.json()["generation"].endswith(short_response)
 
 
 def test_generate_chat():
