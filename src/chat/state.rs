@@ -1,4 +1,4 @@
-use super::models::{HuggingFaceModels, MockModels};
+use super::models::{HuggingFaceModels, MockModels, ReflectionModels};
 use super::{chat_trait::ChatLlm, errors::ModelError, ChatRequest, ChatResponse};
 use crate::chat::models::OpenAIModels;
 use crate::secret_manager;
@@ -34,6 +34,13 @@ impl ChatModels {
                     tracing::info!("Found mock.json, loading mock models");
                     let mock_models = MockModels::new(&path);
                     for (name, model) in mock_models.models {
+                        models.insert(name, Box::new(model));
+                    }
+                }
+                Some("reflection.json") => {
+                    tracing::info!("Found reflection.json, loading reflection model");
+                    let reflection_models = ReflectionModels::new(&path);
+                    for (name, model) in reflection_models.models {
                         models.insert(name, Box::new(model));
                     }
                 }
