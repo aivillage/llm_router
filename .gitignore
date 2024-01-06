@@ -5,6 +5,7 @@ __pycache__/
 
 .data
 .env_keys
+.env_keys.json
 
 # C extensions
 *.so

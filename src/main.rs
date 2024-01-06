@@ -29,7 +29,7 @@ async fn main() -> anyhow::Result<()> {
     logging::init_logging();
 
     let redis_client = redis_client();
-    let secret_manager = Secrets::from_env();
+    let secret_manager = Secrets::new();
 
     let app_state = AppState {
         redis_client,

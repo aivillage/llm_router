@@ -18,8 +18,7 @@ services:
     user: root
     restart: always
     env_file:
-      - ../.env.template
-      - ../.env_keys
+      - ../config/.env.template
     ports:
       - "8000:8000"
     volumes:
@@ -52,6 +51,29 @@ services:
       interval: 5s
       timeout: 5s
       retries: 55
+
+  dev_vault:
+    image: hashicorp/vault:1.14
+    container_name: dev_vault
+    ports:
+      - "8200:8200"
+    cap_add:
+      - IPC_LOCK
+    entrypoint: vault server -dev -dev-root-token-id="root" -dev-listen-address="0.0.0.0:8200"
+
+  dev_vault_init:
+    build: 
+      context: ../dockerfiles/
+      dockerfile: Dockerfile.vaultsecrets
+    volumes:
+      - ../config/.env_keys.json:/secrets/llm-vault.json:ro
+    env_file:
+      - ../config/.env_keys
+    environment:
+      - VAULT_ADDR=http://dev_vault:8200
+      - VAULT_TOKEN=root
+    depends_on:
+      - dev_vault
 
 networks:
     default:
