@@ -4,10 +4,10 @@
         "url": "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-v0.1",
         "parameters": {},
         "prompt_format" : {
-            "system_token": "<|system|>",
-            "prompt_token": "<|prompter|>",
-            "assistant_token": "<|assistant|>",
-            "stop_token": "<|endoftext|>"
+            "system_token": "",
+            "prompt_token": "[INST]",
+            "assistant_token": "[/INST]",
+            "stop_token": "</s>"
         },
         "context_size": 2048
     }
