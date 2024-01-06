@@ -1,5 +1,6 @@
 #!/bin/sh
-echo "Waiting for Vault to sufficiently start..."
+echo "This is a development image for testing Vault secrets. Do not use in production."
+echo "Waiting for the development Vault to sufficiently start..."
 sleep 3
 
 echo "Authenticate into Vault"
