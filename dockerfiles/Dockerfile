@@ -10,7 +10,6 @@ RUN apt-get update && apt-get install -y \
 # Install dependencies
 COPY ./src /opt/llm_router/src
 COPY ./Cargo.toml /opt/llm_router/Cargo.toml
-COPY ./Cargo.lock /opt/llm_router/Cargo.lock
 
 RUN chown -R 1000:1000 /opt/llm_router
 
