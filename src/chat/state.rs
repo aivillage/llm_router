@@ -1,6 +1,6 @@
 use super::models::{HuggingFaceModels, MockModels, ReflectionModels};
 use super::{chat_trait::ChatLlm, errors::ModelError, ChatRequest, ChatResponse};
-use crate::chat::models::OpenAIModels;
+use crate::chat::models::{OpenAIModels, VertexModels};
 use crate::secret_manager;
 use anyhow::Context;
 use redis::AsyncCommands;
@@ -47,6 +47,13 @@ impl ChatModels {
                 Some("huggingface.json") => {
                     tracing::info!("Found huggingface.json, loading huggingface models");
                     let huggingface_models = HuggingFaceModels::new(&path)?;
+                    for model in huggingface_models.models {
+                        models.insert(model.name.clone(), Box::new(model));
+                    }
+                }
+                Some("vertex.json") => {
+                    tracing::info!("Found vertex.json, loading vertex models");
+                    let huggingface_models = VertexModels::new(&path)?;
                     for model in huggingface_models.models {
                         models.insert(model.name.clone(), Box::new(model));
                     }

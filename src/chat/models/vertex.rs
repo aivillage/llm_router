@@ -40,23 +40,10 @@ use reqwest::Client;
 pub struct VertexOpenModelParameters {}
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct OpenPromptFormat {
-    pub system_token: String,
-    pub prompt_token: String,
-    pub assistant_token: String,
-    pub stop_token: String,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct HuggingFaceModel {
+pub struct VertexModel {
     pub name: String,
     pub url: String,
-    pub prompt_format: HuggingFacePromptFormat,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-struct Generation {
-    generated_text: String,
+    pub context_size: usize,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -74,10 +61,8 @@ struct ChatResponse {
     predictions: Vec<String>,
 }
 
-type HuggingFaceResponse = Vec<Generation>;
-
 #[async_trait]
-impl ChatLlm for HuggingFaceModel {
+impl ChatLlm for VertexModel {
     fn name(&self) -> &str {
         &self.name
     }
@@ -90,31 +75,10 @@ impl ChatLlm for HuggingFaceModel {
         &self,
         secrets: Secrets,
         prompt: String,
-        system: Option<String>,
-        history: Vec<History>,
+        _system: Option<String>,
+        _history: Vec<History>,
     ) -> Result<String, ModelError> {
-        let mut full_prompt = String::new();
-        if let Some(system) = system {
-            full_prompt.push_str(&format!(
-                "{}{}{}",
-                self.prompt_format.system_token, system, self.prompt_format.stop_token
-            ));
-        }
-        for h in history {
-            full_prompt.push_str(&format!(
-                "{}{}{}",
-                self.prompt_format.prompt_token, h.prompt, self.prompt_format.stop_token
-            ));
-            full_prompt.push_str(&format!(
-                "{}{}{}",
-                self.prompt_format.assistant_token, h.generation, self.prompt_format.stop_token
-            ));
-        }
-        full_prompt.push_str(&format!(
-            "{}{}{}",
-            self.prompt_format.prompt_token, prompt, self.prompt_format.stop_token
-        ));
-        full_prompt.push_str(self.prompt_format.assistant_token.as_str());
+        let mut full_prompt = prompt;
 
         let auth_token = secrets
             .get_secret("VERTEX_API_TOKEN")
@@ -125,21 +89,19 @@ impl ChatLlm for HuggingFaceModel {
         let response = client
             .post(&self.url)
             .json(&serde_json::json!({
-                "inputs": full_prompt,
-                "parameters": self.parameters,
-                "stream": false,
+                "instances": [{"prompt": full_prompt}]
             }))
             .header("Authorization", format!("Bearer {}", auth_token))
             .send()
             .await
             .map_err(|e| {
-                tracing::error!("Error sending request to huggingface: {}", e);
+                tracing::error!("Error sending request to vertex: {}", e);
                 ModelError::UpstreamModelError
             })?;
 
         if response.status().is_server_error() {
             tracing::error!(
-                "Error from huggingface: {}",
+                "Error from vertex: {}",
                 response
                     .text()
                     .await
@@ -156,7 +118,7 @@ impl ChatLlm for HuggingFaceModel {
                 }
                 _ => {
                     tracing::error!(
-                        "Error from huggingface: {}",
+                        "Error from vertex: {}",
                         response
                             .text()
                             .await
@@ -167,27 +129,28 @@ impl ChatLlm for HuggingFaceModel {
             }
         }
 
-        let mut response: HuggingFaceResponse = response.json().await.map_err(|e| {
+        let mut response: ChatResponse = response.json().await.map_err(|e| {
             tracing::error!("Error parsing response from huggingface: {}", e);
             ModelError::UpstreamModelError
         })?;
-        let generation = response.pop().ok_or_else(|| {
+        let generation = response.predictions.pop().ok_or_else(|| {
             tracing::error!("No generation in response from huggingface");
             ModelError::UpstreamModelError
         })?;
-        Ok(generation.generated_text)
+        let generation = generation.split("Output:").next().unwrap_or_default().to_string();
+        Ok(generation)
     }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct HuggingFaceModels {
-    pub models: Vec<HuggingFaceModel>,
+pub struct VertexModels {
+    pub models: Vec<VertexModel>,
 }
 
-impl HuggingFaceModels {
+impl VertexModels {
     pub fn new<P: AsRef<Path> + Send + Sync>(file: P) -> anyhow::Result<Self> {
         let file = std::fs::File::open(file)?;
-        let models: Vec<HuggingFaceModel> = serde_json::from_reader(file)?;
+        let models: Vec<VertexModel> = serde_json::from_reader(file)?;
         Ok(Self { models })
     }
 }
