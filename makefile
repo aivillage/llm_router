@@ -10,5 +10,8 @@ test:
 publish_dev:
 	docker buildx build --platform linux/amd64,linux/arm64,linux/arm/v7 --file dockerfiles/Dockerfile -t aivillage/llm_router:dev --push .
 
+publish:
+	docker buildx build --platform linux/amd64,linux/arm64,linux/arm/v7 --file dockerfiles/Dockerfile -t aivillage/llm_router:latest --push .
+
 lockfile:
 	cargo generate-lockfile
