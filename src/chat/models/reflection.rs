@@ -28,7 +28,7 @@ impl ChatLlm for ReflectionModel {
         _secrets: Secrets,
         prompt: String,
         _system: Option<String>,
-        history: Vec<History>,
+        _history: Vec<History>,
     ) -> Result<String, ModelError> {
         // Ok(format!("history: {}, prompt: {}", history, prompt))
         Ok(format!("prompt: {}", prompt))

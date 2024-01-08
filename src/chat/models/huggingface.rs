@@ -24,9 +24,61 @@ pub struct HuggingFaceModelParameters {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct HuggingFacePromptFormat {
     pub system_token: String,
+    #[serde(default = "String::new")]
+    pub close_system_token: String,
     pub prompt_token: String,
+    #[serde(default = "String::new")]
+    pub close_prompt_token: String,
     pub assistant_token: String,
+    #[serde(default = "String::new")]
+    pub close_assistant_token: String,
     pub stop_token: String,
+}
+
+impl HuggingFacePromptFormat {
+    pub fn format_system_prompt(&self, system: &str) -> String {
+        if self.close_system_token.is_empty() {
+            return format!("{}{}{}", self.system_token, system, self.stop_token);
+        } else {
+            return format!(
+                "{}{}{}",
+                self.system_token, system, self.close_system_token
+            );
+        }
+    }
+
+    pub fn format_prompt(&self, prompt: &str) -> String {
+        if self.close_prompt_token.is_empty() {
+            return format!("{}{}{}", self.prompt_token, prompt, self.stop_token);
+        } else {
+            return format!("{}{}{}", self.prompt_token, prompt, self.close_prompt_token);
+        }
+    }
+
+    pub fn format_assistant_prompt(&self, assistant: &str) -> String {
+        if self.close_assistant_token.is_empty() {
+            return format!("{}{}{}", self.assistant_token, assistant, self.stop_token);
+        } else {
+            return format!(
+                "{}{}{}",
+                self.assistant_token, assistant, self.close_assistant_token
+            );
+        }
+    }
+
+    pub fn format(&self, system: Option<&str>, prompt: &str, history: &[History]) -> String {
+        let mut full_prompt = String::new();
+        if let Some(system) = system {
+            full_prompt.push_str(&self.format_system_prompt(system));
+        }
+        for h in history {
+            full_prompt.push_str(&self.format_prompt(&h.prompt));
+            full_prompt.push_str(&self.format_assistant_prompt(&h.generation));
+        }
+        full_prompt.push_str(&self.format_prompt(prompt));
+        full_prompt.push_str(&self.assistant_token);
+        full_prompt
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -62,28 +114,11 @@ impl ChatLlm for HuggingFaceModel {
         system: Option<String>,
         history: Vec<History>,
     ) -> Result<String, ModelError> {
-        let mut full_prompt = String::new();
-        if let Some(system) = system {
-            full_prompt.push_str(&format!(
-                "{}{}{}",
-                self.prompt_format.system_token, system, self.prompt_format.stop_token
-            ));
-        }
-        for h in history {
-            full_prompt.push_str(&format!(
-                "{}{}{}",
-                self.prompt_format.prompt_token, h.prompt, self.prompt_format.stop_token
-            ));
-            full_prompt.push_str(&format!(
-                "{}{}{}",
-                self.prompt_format.assistant_token, h.generation, self.prompt_format.stop_token
-            ));
-        }
-        full_prompt.push_str(&format!(
-            "{}{}{}",
-            self.prompt_format.prompt_token, prompt, self.prompt_format.stop_token
-        ));
-        full_prompt.push_str(self.prompt_format.assistant_token.as_str());
+        let full_prompt = self.prompt_format.format(
+            system.as_deref(),
+            &prompt,
+            &history,
+        );
 
         let auth_token = secrets
             .get_secret("HUGGINGFACE_API_TOKEN")
