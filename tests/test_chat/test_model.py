@@ -35,7 +35,7 @@ def generate_for_model(model: str):
 
 @pytest.mark.external
 def test_generate_huggingface():
-    generate_for_model("oasst-pythia-12b")
+    generate_for_model("zephyr-7b")
 
 
 @pytest.mark.external
