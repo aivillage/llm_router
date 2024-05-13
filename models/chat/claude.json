@@ -1,6 +1,6 @@
 [
     {
-        "name": "claude-v1",
+        "name": "claude-3-opus",
         "model": "claude-3-opus-20240229",
         "parameters": {
             "max_tokens": 100,
