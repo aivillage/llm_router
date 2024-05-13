@@ -1,0 +1,15 @@
+[
+    {
+        "name": "claude-3-opus",
+        "model": "claude-3-opus-20240229",
+        "parameters": {
+            "max_tokens": 100,
+            "temperature": 0.9,
+            "top_p": 0.9,
+            "metadata": {},
+            "system": "You are an AI assistant created by Anthropic to be helpful, harmless, and honest.",
+            "tools": []
+        },
+        "context_size": 2048
+    }
+]
