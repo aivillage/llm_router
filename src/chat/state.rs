@@ -1,6 +1,8 @@
 use super::models::{HuggingFaceModels, MockModels, ReflectionModels};
 use super::{chat_trait::ChatLlm, errors::ModelError, ChatRequest, ChatResponse};
 use crate::chat::models::OpenAIModels;
+use crate::chat::models::ClaudeModels;
+
 use crate::secret_manager;
 use anyhow::Context;
 use redis::AsyncCommands;
@@ -55,6 +57,13 @@ impl ChatModels {
                     tracing::info!("Found openai.json, loading openai models");
                     let openai_models = OpenAIModels::new(&path)?;
                     for model in openai_models.models {
+                        models.insert(model.name.clone(), Box::new(model));
+                    }
+                }
+                Some("claude.json") => {
+                    tracing::info!("Found claude.json, loading claude models");
+                    let claude_models: ClaudeModels = ClaudeModels::new(&path)?;
+                    for model in claude_models.models {
                         models.insert(model.name.clone(), Box::new(model));
                     }
                 }
