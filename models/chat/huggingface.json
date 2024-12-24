@@ -20,9 +20,9 @@
             "stop": ["<|endoftext|>"]
         },
         "prompt_format" : {
-            "system_token": "",
-            "prompt_token": "",
-            "assistant_token": "",
+            "system_token": "System: ",
+            "prompt_token": "### Instruction: ",
+            "assistant_token": "### Response: ",
             "stop_token": "\n"
         },
         "context_size": 2048

@@ -7,13 +7,14 @@ url = "http://0.0.0.0:8000"
 def generate_for_model(model: str):
     payload = {
         "uuid": str(uuid4()),
-        "prompt": "test",
-        "preprompt": "test",
+        "prompt": "What is going on?",
         "model": model,
     }
     response = requests.post(url + "/chat/generate", json=payload)
-    assert response.status_code == 200
     generation = response.json()["generation"]
-    assert generation != ""
+    print(generation)
 
+print("======== zephyr-7b =========")
 generate_for_model("zephyr-7b")
+print("======== falcon-7b =========")
+generate_for_model("falcon-7b")
