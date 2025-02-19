@@ -20,7 +20,7 @@ spec:
             nvidia.com/gpu: "1"
         env:
         - name: MODEL_ID
-          value: OpenAssistant/falcon-7b-sft-top1-696
+          value: tiiuae/falcon-7b-instruct
         - name: NUM_SHARD
           value: "1"
         - name: PORT

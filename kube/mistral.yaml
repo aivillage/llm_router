@@ -27,6 +27,8 @@ spec:
           value: "8080"
         - name: QUANTIZE
           value: bitsandbytes-nf4
+        - name: SLIDING_WINDOW
+          value: "-1"
         volumeMounts:
           - mountPath: /dev/shm
             name: dshm

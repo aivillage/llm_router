@@ -13,8 +13,8 @@ spec:
         app: llama2-7b
     spec:
       containers:
-      - name: llm
-        image: ghcr.io/huggingface/text-generation-inference:1.1.0
+      - name: llama2-7b
+        image: ghcr.io/huggingface/text-generation-inference:1.3.4
         resources:
           limits:
             nvidia.com/gpu: "1"
@@ -26,7 +26,12 @@ spec:
         - name: PORT
           value: "8080"
         - name: QUANTIZE
-          value: bitsandbytes-nf4
+          value: bitsandbytes
+        - name: HUGGING_FACE_HUB_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: l4-demo
+              key: HUGGING_FACE_TOKEN
         volumeMounts:
           - mountPath: /dev/shm
             name: dshm
